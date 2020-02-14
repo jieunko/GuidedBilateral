@@ -161,6 +161,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FirstOpenCV.cpp" />
+    <ClCompile Include="guidedbilateral.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="guidedBilateral.h" />
+    <ClInclude Include="main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
