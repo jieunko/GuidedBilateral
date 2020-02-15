@@ -1,4 +1,5 @@
-Debug/**
-!Debug/opencv_world412d.dll
+FirstOpenCV/bin/
+FirstOpenCV/library/
+Debug/
 x64/
 .vs/

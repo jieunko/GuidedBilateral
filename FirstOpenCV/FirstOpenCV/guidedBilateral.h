@@ -1,27 +1,24 @@
 #pragma once
-#include "main.h"
+#include <iostream>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <omp.h>
+#include <chrono>
 #include <math.h>
+using namespace std;
+using namespace cv;
+using namespace chrono;
+
 void guidedBilateralFilter(Mat& GuideI, Mat& Src, Mat& Prev, int kernelSize, double sigSpatial, double sigGuideI);
 
-double calculateSEF(double noiseScaleT, double noiseShapeAlpha)
-{
-	return 1 / (2 * noiseShapeAlpha) * (pow((1 + noiseScaleT), noiseShapeAlpha) - 1);
-};
+double calculateSEF(double noiseScaleT, double noiseShapeAlpha);
 
-double length(int x, int y, int x2, int y2)
-{
-	return sqrt(pow((x - x2), 2) + pow((y - y2), 2));
 
-}
+double magnitude(int x, int y, int x2, int y2);
 
-double calculateGaussian(double val, double sig)
-{
-	return exp(-(pow(val, 2)) / (2 * pow(sig, 2))) / (2 * CV_PI * pow(sig, 2));
-}
+double calculateGaussian(double val, double sig);
 
-double photometricNoiseModel(int x, int y, int x2, int y2, Mat& GuideI, double sigSpatial, double sigGuideI)
-{
-	double spatial = calculateGaussian(length(x, y, x2, y2), sigSpatial);
-	double guided = calculateGaussian(GuideI.at<uchar>(x, y) - GuideI.at<uchar>(x, y), sigGuideI);
-	return spatial * guided;
-}
+double photometricNoiseModel(int x, int y, int x2, int y2, Mat& GuideI, double sigSpatial, double sigGuideI);
+double firstOrderDeriv(int x, int y, int x2, int y2, Mat& Img);
