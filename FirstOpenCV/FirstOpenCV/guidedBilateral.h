@@ -21,4 +21,4 @@ double magnitude(int x, int y, int x2, int y2);
 double calculateGaussian(double val, double sig);
 
 double photometricNoiseModel(int x, int y, int x2, int y2, Mat& GuideI, double sigSpatial, double sigGuideI);
-double firstOrderDeriv(int x, int y, int x2, int y2, Mat& Img);
+double firstOrderDeriv(int x, int y, Mat& Img);

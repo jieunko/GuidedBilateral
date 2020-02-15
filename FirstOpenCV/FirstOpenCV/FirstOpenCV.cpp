@@ -21,6 +21,7 @@ int main(int argc, char** argv)
 		src = cv::imread("testdata.png");
 	}
 	cv::imshow("showTest", src);
+	//cout << src.at<double>(100, 100);
 
 	
 	waitKey(0);
