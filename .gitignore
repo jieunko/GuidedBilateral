@@ -1,3 +1,4 @@
-Debug/
+Debug/**
+!Debug/opencv_world412d.dll
 x64/
 .vs/
