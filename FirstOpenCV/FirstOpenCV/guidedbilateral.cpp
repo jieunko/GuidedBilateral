@@ -1,14 +1,37 @@
 #include "guidedBilateral.h"
 
-void guidedBilateralFilter(Mat& GuideI, Mat& Src, Mat& Prev, int kernelSize, double sigSpatial, double sigGuideI)
+void addSaltandPepper(Mat& tgt, double ratio)
 {
-	SEFMap.copySize(Src);
-	SEFMap.setTo(Scalar::all(0));
+	int rows = tgt.rows;
+	int cols = tgt.cols;
+	int numPix = (int)((double)rows * cols) * ratio;
+	for (int i = 0; i < numPix; i++)
+	{
+		int r = rand() % rows;
+		int c = rand() % cols;
+		uchar* pixel = tgt.ptr<uchar>(r) + c;
+		*pixel = (rand() % 2 == 1) ? 255 : 0;
+	}
 }
 
-double calculateSEF(double noiseScaleT, double noiseShapeAlpha) //estimated noise model
+Mat guidedBilateralFilter(Mat& GuideI, Mat& Src, Mat& Prev, int kernelSize, double sigSpatial, double sigGuideI, double noiseShapeAlpha)
 {
-	return 1 / (2 * noiseShapeAlpha) * (pow((1 + noiseScaleT), noiseShapeAlpha) - 1);
+	Mat ret = Src.clone();
+	ret.setTo(Scalar::all(0));
+	int m = kernelSize / 2;
+	for (int i = m; i < Src.rows- m; i++)
+	{
+		for (int j = m; j < Src.cols - m; j++)
+		{
+			ret.at<uchar>(j, i) = (uchar)insideWindow(GuideI, Src, Prev, i, j, kernelSize, sigSpatial, sigGuideI, noiseShapeAlpha);
+		}
+	}
+	return ret;
+}
+
+double calculateSEFderiv(double noiseScaleT, double noiseShapeAlpha) //estimated noise model
+{
+	return 1 / (2 * noiseShapeAlpha* noiseShapeAlpha) * (pow((1 + noiseScaleT), noiseShapeAlpha-1));
 };
 
 double length(int x, int y, int x2, int y2)
@@ -30,51 +53,44 @@ double calculateGaussian(double val, double sig)
 double ImgSimilarity(int x, int y, int x2, int y2, Mat& GuideI, double sigSpatial, double sigGuideI)
 {
 	double spatial = calculateGaussian(length(x, y, x2, y2), sigSpatial);
-	double guided = calculateGaussian(GuideI.at<uchar>(y, x) - GuideI.at<uchar>(y, x), sigGuideI);
+	double guided = calculateGaussian(GuideI.at<uchar>(y, x) - GuideI.at<uchar>(y2, x2), sigGuideI);
 	return spatial * guided;
 }
 
-double firstOrderDeriv(int x, int y,  Mat& Img)//http://www.me.umn.edu/courses/me5286/vision/VisionNotes/2017/ME5286-Lecture7-2017-EdgeDetection2.pdf
+double insideWindow(Mat& GuideI, Mat& Src, Mat& Prev, int x, int y, int kernelSize, double sigSpatial, double sigGuideI, double noiseShapeAlpha)
 {
-	double a[8] = { 0.0, };
-	a[0] = Img.at<uchar>(y - 1, x - 1);
-	a[1] = Img.at<uchar>(y - 1, x);
-    a[2] = Img.at<uchar>(y - 1, x + 1);
-	a[3] = Img.at<uchar>(y, x + 1);
-	a[4] = Img.at<uchar>(y+1, x + 1);
-	a[5] = Img.at<uchar>(y +1, x );
-	a[6] = Img.at<uchar>(y + 1, x - 1);
-	a[7] = Img.at<uchar>(y , x-1);
-
-	double derivX = a[2] + a[3] + a[4] - (a[0] + a[7] + a[6]);
-	double derivY = a[6] + a[5] + a[4] - (a[0] + a[1] + a[2]);
-	return 0.0;
-}
-
-double photometricNoiseModel(Mat& prev, Mat& src)
-{
-	return 0.0;
-}
-
-void ImgDiff(Mat& prev, Mat& src, int kernelSize, int x, int y)
-{
-	SEFMap.c
 	int m = kernelSize / 2;
 	int x2 = 0;
 	int y2 = 0;
-	double diff = 0;
-	double E = 0;
+	double sim = 0;
+	double noiseModel = 0;
+	double pix = 0;
+	double divisor = 0;
+	double dividend = 0;
 	for (int i = 0; i < kernelSize; i++)
 	{
-		for (int j = 0; j < kernelSize; j++) 
+		for (int j = 0; j < kernelSize; j++)
 		{
 			x2 = x - m + i;
-			y2 = y - m  + j;
-			diff = prev.at<uchar>(y, x)- src.at<uchar>(y2, x2);
-			SEFMap.at<double>(y,x) += diff* diff;
+			y2 = y - m + j;
+			sim = ImgSimilarity(x, y, x2, y2, GuideI, sigSpatial, sigGuideI);
+			noiseModel = photometricNoiseModel(Prev, Src, x, y, x2, y2, noiseShapeAlpha);
+			pix = Src.at<uchar>(y2, x2);
+			dividend += sim * noiseModel * pix;
+			divisor += sim * noiseModel;
 		}
 	}
+	return dividend / divisor;
+}
 
+
+double photometricNoiseModel(Mat& prev, Mat& src, int x, int y, int x2, int y2, double Alpha)
+{
+	
+	double diff = prev.at<uchar>(y, x) - src.at<uchar>(y2, x2);
+	return calculateSEFderiv(diff * diff, Alpha);
 
 }
+
+
 
