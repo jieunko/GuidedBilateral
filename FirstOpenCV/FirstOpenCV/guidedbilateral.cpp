@@ -2,16 +2,13 @@
 
 void addSaltandPepper(Mat& tgt, double ratio)
 {
-	int rows = tgt.rows;
-	int cols = tgt.cols;
-	int numPix = (int)((double)rows * cols) * ratio;
-	for (int i = 0; i < numPix; i++)
-	{
-		int r = rand() % rows;
-		int c = rand() % cols;
-		uchar* pixel = tgt.ptr<uchar>(r) + c;
-		*pixel = (rand() % 2 == 1) ? 255 : 0;
-	}
+	Mat noiseImg = tgt.clone();
+	noiseImg.setTo(Scalar::all(0));
+	randn(noiseImg, Scalar::all(0.0), Scalar::all(35.0));
+	
+	addWeighted(tgt, 1.0, noiseImg, 1.0, 0.0, tgt);
+
+		
 }
 
 Mat guidedBilateralFilter(Mat& GuideI, Mat& Src, Mat& Prev, int kernelSize, double sigSpatial, double sigGuideI, double noiseShapeAlpha)
@@ -32,7 +29,13 @@ Mat guidedBilateralFilter(Mat& GuideI, Mat& Src, Mat& Prev, int kernelSize, doub
 double calculateSEFderiv(double noiseScaleT, double noiseShapeAlpha) //estimated noise model
 {
 	return 1 / (2 * noiseShapeAlpha* noiseShapeAlpha) * (pow((1 + noiseScaleT), noiseShapeAlpha-1));
-};
+}
+double calculateSEF(double noiseScaleT, double noiseShapeAlpha)
+{
+	if (!noiseShapeAlpha) return 1;
+	return exp(1/(2*noiseShapeAlpha) * (pow((1+ noiseScaleT), noiseShapeAlpha)-1));
+}
+;
 
 double length(int x, int y, int x2, int y2)
 {
@@ -45,15 +48,17 @@ double magnitude(double x, double y)
 	return sqrt(pow(x, 2) + pow(y, 2));
 }
 
-double calculateGaussian(double val, double sig)
+double calculateGaussian(double val, double sig, double div)
 {
-	return exp(-(pow(val, 2)) / (2 * pow(sig, 2))) / (2 * CV_PI * pow(sig, 2));
+	return exp(-(pow(val, 2)) / (div * pow(sig, 2))); // (2 * CV_PI * pow(sig, 2));
 }
 
 double ImgSimilarity(int x, int y, int x2, int y2, Mat& GuideI, double sigSpatial, double sigGuideI)
 {
-	double spatial = calculateGaussian(length(x, y, x2, y2), sigSpatial);
-	double guided = calculateGaussian(GuideI.at<uchar>(y, x) - GuideI.at<uchar>(y2, x2), sigGuideI);
+	double spatial = calculateGaussian(length(x, y, x2, y2), sigSpatial, 2);
+	//double guided = calculateGaussian(GuideI.at<uchar>(y, x) - GuideI.at<uchar>(y2, x2), sigGuideI);
+	double c = (GuideI.at<uchar>(y, x) - GuideI.at<uchar>(y2, x2)) / sigGuideI;
+	double guided = calculateSEF(c * c, 0);
 	return spatial * guided;
 }
 

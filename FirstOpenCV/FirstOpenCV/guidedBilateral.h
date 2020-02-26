@@ -7,6 +7,7 @@
 #include <omp.h>
 #include <chrono>
 #include <math.h>
+#include <random>
 using namespace std;
 using namespace cv;
 using namespace chrono;
@@ -16,11 +17,12 @@ void addSaltandPepper(Mat& tgt, double ratio);
 Mat guidedBilateralFilter(Mat& GuideI, Mat& Src, Mat& Prev, int kernelSize, double sigSpatial, double sigGuideI, double noiseShapeAlpha = 1.0);
 
 double calculateSEFderiv(double noiseScaleT, double noiseShapeAlpha);
+double calculateSEF(double noiseScaleT, double noiseShapeAlpha);
 
 double length(int x, int y, int x2, int y2);
 double magnitude(double x, double y);
 
-double calculateGaussian(double val, double sig);
+double calculateGaussian(double val, double sig, double div = 1);
 
 double ImgSimilarity(int x, int y, int x2, int y2, Mat& GuideI, double sigSpatial, double sigGuideI);
 

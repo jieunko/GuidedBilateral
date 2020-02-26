@@ -17,16 +17,16 @@ int main(int argc, char** argv)
 	src = cv::imread("grapefruit.jpg", IMREAD_GRAYSCALE);
 	Guide = src.clone();
 	Prev = src.clone();
-	addSaltandPepper(src, 0.2);
+	addSaltandPepper(src, 0.05);
 	if (!src.data) 
 	{
 		src = cv::imread("testdata.png");
 	}
 	cv::imshow("showTest", src);
 	//cout << src.at<double>(100, 100);
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 100; i++)
 	{
-		result = guidedBilateralFilter(Guide, src, Prev, 5, 1, 1);
+		result = guidedBilateralFilter(Guide, src, Prev, 5, 1, 5);
 		Prev = result.clone();
 	}
 	cv::imshow("Result", result);
